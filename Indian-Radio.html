@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All India Radio - Live Web Tuner</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23ff4757' d='M274.6 34.3c-28.6-6-56.7 10-65.7 37.9L168.4 196 64 196c-35.3 0-64 28.7-64 64l0 192c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-192c0-35.3-28.7-64-64-64l-104.4 0L312.6 72.1c8.9-27.9-9.1-55.9-38-67.8zM416 352a48 48 0 1 1 0 96 48 48 0 1 1 0-96zM136 432c-22.1 0-40-17.9-40-40s17.9-40 40-40s40 17.9 40 40s-17.9 40-40 40z'/%3E%3C/svg%3E" type="image/svg+xml">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <!-- HLS.js for .m3u8 live streams -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* ==========================================================================
+           PHYSICS-BASED NEOMORPHIC LIGHTING ENGINE (6 CURATED THEMES)
+           Dual light model: Directional Highlight (-X, -Y) + Ambient Shadow (+X, +Y)
+           ========================================================================== */
+        
+        /* 1. Light Pearl / Ceramic */
+        html[data-theme="light"] {
+            --neo-bg: #e5ebf3;
+            --neo-surface-gradient: linear-gradient(145deg, #f5fbff, #cfd4dc);
+            --neo-surface-flat: #e5ebf3;
+            --neo-shadow-light: #ffffff;
+            --neo-shadow-dark: #b8c1cd;
+            --neo-shadow-ambient: rgba(184, 193, 205, 0.6);
+            --neo-text: #1e293b;
+            --neo-text-muted: #64748b;
+            --neo-accent: #ff4757;
+            --neo-accent-rgb: 255, 71, 87;
+            --neo-border: rgba(255, 255, 255, 0.75);
+        }
+
+        /* 2. Obsidian Onyx / OLED Matte Black (Default) */
+        html[data-theme="dark"] {
+            --neo-bg: #131418;
+            --neo-surface-gradient: linear-gradient(145deg, #18191f, #0d0e11);
+            --neo-surface-flat: #131418;
+            --neo-shadow-light: #20222a;
+            --neo-shadow-dark: #050608;
+            --neo-shadow-ambient: rgba(0, 0, 0, 0.8);
+            --neo-text: #f8fafc;
+            --neo-text-muted: #848e9f;
+            --neo-accent: #ff4757;
+            --neo-accent-rgb: 255, 71, 87;
+            --neo-border: rgba(255, 255, 255, 0.05);
+        }
+
+        /* 3. Midnight Cyber / Deep Oceanic */
+        html[data-theme="cyber"] {
+            --neo-bg: #0b1220;
+            --neo-surface-gradient: linear-gradient(145deg, #101a2d, #070c16);
+            --neo-surface-flat: #0b1220;
+            --neo-shadow-light: #15223c;
+            --neo-shadow-dark: #03060b;
+            --neo-shadow-ambient: rgba(0, 0, 0, 0.85);
+            --neo-text: #e2eafc;
+            --neo-text-muted: #627494;
+            --neo-accent: #00f2fe;
+            --neo-accent-rgb: 0, 242, 254;
+            --neo-border: rgba(0, 242, 254, 0.12);
+        }
+
+        /* 4. Warm Sahara / Retro Radio Clay */
+        html[data-theme="sahara"] {
+            --neo-bg: #e6dfd1;
+            --neo-surface-gradient: linear-gradient(145deg, #f6efdf, #d0c9bc);
+            --neo-surface-flat: #e6dfd1;
+            --neo-shadow-light: #ffffff;
+            --neo-shadow-dark: #b8b1a3;
+            --neo-shadow-ambient: rgba(184, 177, 163, 0.65);
+            --neo-text: #3c3427;
+            --neo-text-muted: #7d7260;
+            --neo-accent: #e65100;
+            --neo-accent-rgb: 230, 81, 0;
+            --neo-border: rgba(255, 255, 255, 0.8);
+        }
+
+        /* 5. Nordic Titanium / Industrial Slate */
+        html[data-theme="nordic"] {
+            --neo-bg: #1e242d;
+            --neo-surface-gradient: linear-gradient(145deg, #232a35, #171c23);
+            --neo-surface-flat: #1e242d;
+            --neo-shadow-light: #2b3340;
+            --neo-shadow-dark: #0f1217;
+            --neo-shadow-ambient: rgba(0, 0, 0, 0.7);
+            --neo-text: #e2e8f0;
+            --neo-text-muted: #78879e;
+            --neo-accent: #10b981;
+            --neo-accent-rgb: 16, 185, 129;
+            --neo-border: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 6. Royal Amethyst / Velvet Purple */
+        html[data-theme="amethyst"] {
+            --neo-bg: #171126;
+            --neo-surface-gradient: linear-gradient(145deg, #1f1733, #0f0b1a);
+            --neo-surface-flat: #171126;
+            --neo-shadow-light: #281d42;
+            --neo-shadow-dark: #08050e;
+            --neo-shadow-ambient: rgba(0, 0, 0, 0.85);
+            --neo-text: #f3e8ff;
+            --neo-text-muted: #8b79a8;
+            --neo-accent: #c084fc;
+            --neo-accent-rgb: 192, 132, 252;
+            --neo-border: rgba(192, 132, 252, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--neo-bg);
+            color: var(--neo-text);
+            transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s ease;
+            overflow: hidden;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ==========================================================================
+           TACTILE NEOMORPHIC PRIMITIVES & MICRO-INTERACTIONS
+           ========================================================================== */
+        
+        .neo-flat {
+            background: var(--neo-surface-gradient);
+            box-shadow: 8px 8px 18px var(--neo-shadow-dark), -8px -8px 18px var(--neo-shadow-light);
+            border: 1px solid var(--neo-border);
+        }
+        
+        .neo-pressed {
+            background: var(--neo-surface-flat);
+            box-shadow: inset 5px 5px 10px var(--neo-shadow-dark), inset -5px -5px 10px var(--neo-shadow-light);
+            border: 1px solid var(--neo-border);
+        }
+
+        .neo-btn {
+            background: var(--neo-surface-gradient);
+            box-shadow: 5px 5px 12px var(--neo-shadow-dark), -5px -5px 12px var(--neo-shadow-light);
+            border: 1px solid var(--neo-border);
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .neo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 7px 7px 16px var(--neo-shadow-dark), -7px -7px 16px var(--neo-shadow-light);
+            filter: brightness(1.03);
+        }
+
+        .neo-btn:active {
+            transform: translateY(1px) scale(0.96);
+            box-shadow: inset 4px 4px 8px var(--neo-shadow-dark), inset -4px -4px 8px var(--neo-shadow-light);
+            filter: brightness(0.98);
+        }
+
+        /* Sidebar Navigation Items */
+        .nav-link { 
+            color: var(--neo-text-muted); 
+            font-weight: 700; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .nav-link:hover {
+            color: var(--neo-text);
+            transform: translateX(3px);
+        }
+        .nav-link.active { 
+            background: var(--neo-surface-flat);
+            box-shadow: inset 4px 4px 8px var(--neo-shadow-dark), inset -4px -4px 8px var(--neo-shadow-light); 
+            color: var(--neo-accent);
+            border: 1px solid var(--neo-border);
+            transform: translateX(0);
+        }
+
+        /* High-Definition Tactile Station Cards */
+        .station-card {
+            background: var(--neo-surface-gradient);
+            box-shadow: 7px 7px 16px var(--neo-shadow-dark), -7px -7px 16px var(--neo-shadow-light);
+            border: 1px solid var(--neo-border);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+            will-change: transform;
+        }
+        .station-card:hover {
+            transform: translateY(-5px) scale(1.015);
+            box-shadow: 12px 12px 24px var(--neo-shadow-dark), -12px -12px 24px var(--neo-shadow-light);
+        }
+        .station-card:active {
+            transform: translateY(-1px) scale(0.99);
+        }
+        .station-card.is-playing {
+            border-color: rgba(var(--neo-accent-rgb), 0.65);
+            box-shadow: 0 0 20px rgba(var(--neo-accent-rgb), 0.3), 8px 8px 18px var(--neo-shadow-dark), -8px -8px 18px var(--neo-shadow-light);
+        }
+
+        /* Equalizer Bar Animation */
+        .eq-bar {
+            display: inline-block;
+            width: 3px;
+            background-color: var(--neo-accent);
+            border-radius: 3px;
+            animation: bounce 0.85s ease-in-out infinite alternate;
+        }
+        .eq-bar:nth-child(1) { height: 12px; animation-delay: 0.1s; }
+        .eq-bar:nth-child(2) { height: 19px; animation-delay: 0.3s; }
+        .eq-bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+        .eq-bar:nth-child(4) { height: 16px; animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0% { transform: scaleY(0.25); }
+            100% { transform: scaleY(1.2); }
+        }
+
+        .eq-paused .eq-bar {
+            animation: none !important;
+            transform: scaleY(0.25) !important;
+        }
+
+        /* Tactile Volume Slider */
+        input[type=range] { 
+            -webkit-appearance: none; 
+            background: transparent; 
+            width: 100%;
+        }
+        input[type=range]::-webkit-slider-runnable-track { 
+            height: 7px; 
+            border-radius: 6px; 
+            background: var(--neo-surface-flat);
+            box-shadow: inset 3px 3px 6px var(--neo-shadow-dark), inset -3px -3px 6px var(--neo-shadow-light);
+        }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            height: 18px; 
+            width: 18px; 
+            border-radius: 50%; 
+            background: var(--neo-accent);
+            box-shadow: 0 0 10px rgba(var(--neo-accent-rgb), 0.7), 2px 2px 4px var(--neo-shadow-dark);
+            margin-top: -5.5px; 
+            cursor: pointer; 
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* Floating Bottom Dock */
+        .floating-player {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            z-index: 50;
+            backdrop-filter: blur(16px);
+        }
+        @media (min-width: 768px) {
+            .floating-player { left: 2rem; right: 2rem; }
+        }
+
+        /* Toast Feedback */
+        #toast {
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex overflow-hidden">
+
+    <!-- Mobile Drawer Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden transition-opacity" onclick="toggleMobileMenu()"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="w-[280px] flex-col hidden md:flex absolute top-0 left-0 md:relative h-full z-40 transition-transform" style="background-color: var(--neo-bg);">
+        <div class="p-6 pb-4 flex flex-col h-full justify-between overflow-y-auto no-scrollbar">
+            <div>
+                <!-- Brand Header -->
+                <div class="flex items-center gap-3.5 mb-8 cursor-pointer neo-flat p-4 rounded-2xl" onclick="switchTab('all'); if(window.innerWidth < 768) toggleMobileMenu();">
+                    <div class="w-11 h-11 rounded-xl neo-pressed flex items-center justify-center shrink-0">
+                         <i class="fa-solid fa-radio text-lg" style="color: var(--neo-accent);"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h1 class="font-extrabold text-base tracking-tight truncate leading-tight">All India Radio</h1>
+                        <p class="text-[10px] tracking-widest font-extrabold uppercase" style="color: var(--neo-text-muted);">Suno. Feel India.</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-2.5" id="categoryTabs">
+                    <button class="nav-link active w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-extrabold" data-cat="all">
+                        <i class="fa-solid fa-house w-4 text-center text-sm"></i> All Stations
+                    </button>
+                    <button class="nav-link w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-extrabold" data-cat="air">
+                        <i class="fa-solid fa-tower-broadcast w-4 text-center text-sm"></i> AIR Official
+                    </button>
+                    <button class="nav-link w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-extrabold" data-cat="private">
+                        <i class="fa-solid fa-compact-disc w-4 text-center text-sm"></i> Private FM
+                    </button>
+                    <div class="py-2"><div class="h-px w-full" style="background: var(--neo-border);"></div></div>
+                    <button class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-extrabold" data-cat="favorites">
+                        <span class="flex items-center gap-3.5"><i class="fa-solid fa-heart w-4 text-center text-sm text-red-500"></i> Favourites</span>
+                        <span id="favCountBadge" class="text-[10px] px-2.5 py-0.5 rounded-full neo-pressed font-extrabold">0</span>
+                    </button>
+                    <button class="nav-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-extrabold" data-cat="recent">
+                        <span class="flex items-center gap-3.5"><i class="fa-solid fa-clock-rotate-left w-4 text-center text-sm text-amber-500"></i> Recently Played</span>
+                        <span id="recentCountBadge" class="text-[10px] px-2.5 py-0.5 rounded-full neo-pressed font-extrabold">0</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Footer Preferences Button -->
+            <div class="pt-4 border-t" style="border-color: var(--neo-border);">
+                <button class="nav-link w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-extrabold" onclick="toggleSettingsModal(); if(window.innerWidth < 768) toggleMobileMenu();">
+                    <i class="fa-solid fa-sliders w-4 text-center text-sm"></i> Preferences & Themes
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT VIEWPORT -->
+    <main class="flex-1 flex flex-col relative w-full h-full overflow-hidden">
+        
+        <!-- TOP HEADER (Clean single settings button, external theme button removed) -->
+        <header class="h-20 flex items-center justify-between px-3 md:px-8 shrink-0 z-10 gap-2 md:gap-4">
+            <div class="flex items-center gap-2 md:gap-3 flex-1 overflow-hidden">
+                <button class="md:hidden neo-btn w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0" onclick="toggleMobileMenu()" aria-label="Toggle Menu">
+                    <i class="fa-solid fa-bars text-sm"></i>
+                </button>
+                
+                <!-- Quick Search Input with Deep Well Shadow -->
+                <div class="relative w-full max-w-md group flex-1 neo-pressed rounded-full h-11 flex items-center px-4">
+                    <i class="fa-solid fa-magnifying-glass text-xs font-bold mr-2.5 shrink-0" style="color: var(--neo-text-muted);"></i>
+                    <input type="text" id="searchInput" class="w-full bg-transparent outline-none text-xs md:text-sm font-bold placeholder:text-[var(--neo-text-muted)] text-[var(--neo-text)]" placeholder="Search stations, cities, genres...">
+                    <button id="clearSearchBtn" class="hidden text-xs text-[var(--neo-text-muted)] hover:text-white ml-2 p-1" onclick="clearSearch()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Language Filter Dropdown -->
+                <div class="relative shrink-0 hidden sm:block">
+                    <select id="languageFilter" class="neo-pressed h-11 text-xs font-bold rounded-full pl-4 pr-8 appearance-none outline-none cursor-pointer text-[var(--neo-text)] bg-transparent">
+                        <option value="all">🌐 All Languages</option>
+                        <option value="hindi">Hindi</option>
+                        <option value="english">English</option>
+                        <option value="tamil">Tamil</option>
+                        <option value="telugu">Telugu</option>
+                        <option value="bengali">Bengali</option>
+                        <option value="marathi">Marathi</option>
+                        <option value="gujarati">Gujarati</option>
+                        <option value="kannada">Kannada</option>
+                        <option value="malayalam">Malayalam</option>
+                        <option value="punjabi">Punjabi</option>
+                        <option value="odia">Odia</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none" style="color: var(--neo-text-muted);"></i>
+                </div>
+            </div>
+            
+            <!-- HEADER SETTINGS BUTTON ONLY -->
+            <div class="flex items-center shrink-0">
+                <button class="w-10 h-10 md:w-11 md:h-11 rounded-full neo-btn flex items-center justify-center font-bold text-sm" onclick="toggleSettingsModal()" title="Preferences & Themes">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SCROLLABLE STATIONS CONTAINER -->
+        <div class="flex-1 overflow-y-auto no-scrollbar pb-36 px-3 md:px-8" id="mainScrollArea">
+            
+            <!-- HERO BANNER -->
+            <div id="heroBanner" class="neo-flat w-full rounded-3xl mb-8 p-6 md:p-10 flex items-center justify-between relative overflow-hidden transition-all">
+                <div class="z-10 max-w-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full animate-ping" style="background: var(--neo-accent);"></span>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest" style="color: var(--neo-accent);">Live Broadcast Network</span>
+                    </div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold leading-tight tracking-tight mb-2">
+                        Your Connection.<br>Your Nation.
+                    </h2>
+                    <h3 class="text-xl md:text-3xl font-extrabold mb-5 flex items-center gap-2">
+                        <span class="text-orange-500">All</span>
+                        <span>India</span>
+                        <span class="text-green-500">Radio</span>
+                    </h3>
+                    <button class="neo-btn px-6 py-2.5 rounded-full text-xs md:text-sm font-extrabold flex items-center gap-2.5 active:scale-95" onclick="playFirstAvailable()">
+                        <i class="fa-solid fa-play text-xs" style="color: var(--neo-accent);"></i> Tune In Now
+                    </button>
+                </div>
+                
+                <!-- Decorative Graphic -->
+                <div class="hidden lg:flex relative w-48 h-48 justify-center items-center">
+                    <div class="absolute w-44 h-44 rounded-full neo-pressed flex items-center justify-center">
+                        <div class="w-28 h-28 rounded-full neo-flat flex items-center justify-center">
+                            <i class="fa-solid fa-tower-cell text-4xl opacity-40" style="color: var(--neo-text-muted);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION HEADER -->
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="sectionHeading" class="text-base md:text-xl font-extrabold tracking-tight">Featured Stations</h2>
+                <span id="stationCount" class="text-xs font-bold px-3 py-1 rounded-full neo-pressed" style="color: var(--neo-text-muted);">0 stations</span>
+            </div>
+
+            <!-- DYNAMIC STATIONS GRID -->
+            <div id="stationGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"></div>
+            
+            <!-- Empty state -->
+            <div id="emptyState" class="hidden text-center py-16">
+                <div class="w-16 h-16 rounded-full neo-pressed flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-radio text-2xl" style="color: var(--neo-text-muted);"></i>
+                </div>
+                <h3 class="font-bold text-base mb-1">No stations found</h3>
+                <p class="text-xs" style="color: var(--neo-text-muted);">Try a different keyword or language filter.</p>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden text-center py-6">
+                <i class="fa-solid fa-circle-notch fa-spin text-xl font-bold" style="color: var(--neo-accent);"></i>
+            </div>
+        </div>
+    </main>
+
+    <!-- FLOATING BOTTOM DOCK PLAYER -->
+    <div class="floating-player h-20 md:h-24 neo-flat rounded-2xl md:rounded-3xl flex items-center px-3 md:px-6 justify-between">
+        
+        <!-- Left: Station Info -->
+        <div class="flex items-center gap-3 w-1/3 min-w-[130px] md:min-w-[200px]">
+            <div class="w-11 h-11 md:w-14 md:h-14 rounded-2xl neo-pressed flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                <i class="fa-solid fa-radio text-lg md:text-xl" style="color: var(--neo-text-muted);" id="playerDefaultIcon"></i>
+                <img id="playerLogo" class="w-full h-full object-contain p-1.5 hidden" src="" alt="Logo" onerror="this.classList.add('hidden'); document.getElementById('playerDefaultIcon').classList.remove('hidden');">
+            </div>
+            <div class="flex flex-col truncate pr-1 md:pr-2">
+                <span id="playerStationName" class="font-extrabold text-xs md:text-sm truncate">Select a Station</span>
+                <div class="flex items-center gap-2 text-[10px] md:text-xs font-bold mt-0.5">
+                    <span id="playerStatus" class="truncate" style="color: var(--neo-text-muted);">Ready to stream</span>
+                    <div id="playerEq" class="hidden items-end gap-0.5 h-3 eq-paused">
+                        <span class="eq-bar"></span>
+                        <span class="eq-bar"></span>
+                        <span class="eq-bar"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center: Controls -->
+        <div class="flex items-center justify-center gap-2 md:gap-5">
+            <button id="btnPrev" class="w-9 h-9 md:w-11 md:h-11 rounded-full neo-btn flex items-center justify-center text-sm md:text-base font-bold" title="Previous Station (Left Arrow)">
+                <i class="fa-solid fa-backward-step"></i>
+            </button>
+            
+            <button id="btnPlayPause" class="w-12 h-12 md:w-14 md:h-14 rounded-full neo-btn flex items-center justify-center text-lg md:text-xl font-bold" style="color: var(--neo-accent);" title="Play/Pause (Spacebar)">
+                <i class="fa-solid fa-play ml-0.5" id="playIcon"></i>
+            </button>
+            
+            <button id="btnNext" class="w-9 h-9 md:w-11 md:h-11 rounded-full neo-btn flex items-center justify-center text-sm md:text-base font-bold" title="Next Station (Right Arrow)">
+                <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <audio id="audioPlayer" preload="none"></audio>
+        </div>
+        
+        <!-- Right: Volume & Actions -->
+        <div class="flex items-center justify-end w-1/3 gap-2 md:gap-4">
+            <button id="btnFavorite" class="w-9 h-9 md:w-10 md:h-10 rounded-full neo-btn flex items-center justify-center text-xs md:text-sm font-bold" title="Favorite Station">
+                <i class="fa-regular fa-heart"></i>
+            </button>
+            
+            <div class="hidden md:flex items-center gap-2">
+                <button id="btnMute" class="w-9 h-9 rounded-full neo-btn flex items-center justify-center text-xs font-bold" title="Mute (M)">
+                    <i id="muteIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80" class="w-16 lg:w-24 cursor-pointer" title="Volume">
+            </div>
+
+            <button onclick="document.getElementById('mainScrollArea').scrollTo({top:0, behavior:'smooth'})" class="w-9 h-9 rounded-full neo-btn hidden lg:flex items-center justify-center text-xs font-bold" title="Back to Top">
+                <i class="fa-solid fa-chevron-up"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- PREFERENCES & SETTINGS MODAL (CONTAINS ALL 6 THEMES) -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center px-4 transition-opacity" onclick="if(event.target === this) toggleSettingsModal()">
+        <div class="neo-flat w-full max-w-lg p-6 md:p-8 rounded-3xl relative max-h-[90vh] overflow-y-auto no-scrollbar">
+            <button onclick="toggleSettingsModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full neo-btn flex items-center justify-center text-xs font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h2 class="text-xl font-extrabold mb-6 tracking-tight flex items-center gap-2.5">
+                <i class="fa-solid fa-sliders text-sm" style="color: var(--neo-accent);"></i> Preferences & Themes
+            </h2>
+            
+            <div class="space-y-4">
+                <!-- 6 Handcrafted Themes Grid -->
+                <div class="p-4 neo-pressed rounded-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-extrabold text-xs">Color Scheme & Lighting</h4>
+                        <span class="text-[10px] uppercase tracking-wider font-extrabold" style="color: var(--neo-text-muted);">6 Presets</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="themeButtonsContainer">
+                        <button onclick="setTheme('dark')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="dark">
+                            <span class="w-4 h-4 rounded-full bg-[#131418] border border-gray-700"></span>
+                            <span>Obsidian Onyx</span>
+                        </button>
+                        <button onclick="setTheme('light')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="light">
+                            <span class="w-4 h-4 rounded-full bg-[#e5ebf3] border border-gray-300"></span>
+                            <span>Pearl Ceramic</span>
+                        </button>
+                        <button onclick="setTheme('cyber')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="cyber">
+                            <span class="w-4 h-4 rounded-full bg-[#00f2fe] shadow-[0_0_8px_#00f2fe]"></span>
+                            <span>Midnight Cyber</span>
+                        </button>
+                        <button onclick="setTheme('sahara')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="sahara">
+                            <span class="w-4 h-4 rounded-full bg-[#e6dfd1] border border-[#b8b1a3]"></span>
+                            <span>Warm Sahara</span>
+                        </button>
+                        <button onclick="setTheme('nordic')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="nordic">
+                            <span class="w-4 h-4 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]"></span>
+                            <span>Nordic Slate</span>
+                        </button>
+                        <button onclick="setTheme('amethyst')" class="neo-btn py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1.5" data-theme-btn="amethyst">
+                            <span class="w-4 h-4 rounded-full bg-[#c084fc] shadow-[0_0_8px_#c084fc]"></span>
+                            <span>Royal Velvet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clear Listening History Only -->
+                <div class="flex items-center justify-between p-4 neo-pressed rounded-2xl">
+                    <div>
+                        <h4 class="font-extrabold text-xs">Clear Listening History</h4>
+                        <p class="text-[11px] font-bold" style="color: var(--neo-text-muted);">Deletes recently played records only</p>
+                    </div>
+                    <button onclick="clearHistoryOnly()" class="neo-btn px-3.5 py-2 rounded-xl text-xs font-extrabold text-amber-500">
+                        Clear History
+                    </button>
+                </div>
+
+                <!-- Shortcuts Guide -->
+                <div class="p-4 neo-pressed rounded-2xl">
+                    <h4 class="font-extrabold text-xs mb-2">Tactile Hotkeys</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] font-bold" style="color: var(--neo-text-muted);">
+                        <div><kbd class="px-1.5 py-0.5 rounded neo-flat text-[var(--neo-text)]">Space</kbd> Play / Pause</div>
+                        <div><kbd class="px-1.5 py-0.5 rounded neo-flat text-[var(--neo-text)]">M</kbd> Mute Audio</div>
+                        <div><kbd class="px-1.5 py-0.5 rounded neo-flat text-[var(--neo-text)]">←</kbd> Previous Station</div>
+                        <div><kbd class="px-1.5 py-0.5 rounded neo-flat text-[var(--neo-text)]">→</kbd> Next Station</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <p class="text-[10px] font-extrabold tracking-wider uppercase" style="color: var(--neo-text-muted);">All India Radio Live</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 neo-flat px-4 py-2.5 rounded-full z-[70] pointer-events-none flex items-center gap-2.5 text-xs font-extrabold shadow-xl">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-500"></i>
+        <span id="toastMsg">Updated</span>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE -->
+    <script>
+        // High-fidelity predefined stream database
+        const CORE_STATIONS = [
+            { id: 'air-news-247', name: 'AIR 24x7 News', url: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio005/playlist.m3u8', tags: ['news', 'hindi', 'english', 'national'], freq: '24x7 National News', isAir: true, isPrivate: false, icon: 'fa-tower-broadcast' },
+            { id: 'vividh-bharati', name: 'AIR Vividh Bharati', url: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8', tags: ['music', 'hindi', 'classic'], freq: 'Vividh Bharati Hits', isAir: true, isPrivate: false, icon: 'fa-radio' },
+            { id: 'air-fm-rainbow', name: 'AIR FM Rainbow', url: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio004/playlist.m3u8', tags: ['entertainment', 'hindi', 'pop'], freq: 'Rainbow 102.6 FM', isAir: true, isPrivate: false, icon: 'fa-compact-disc' },
+            { id: 'air-gold', name: 'AIR FM Gold', url: 'https://airhlspush.pc.cdn.bitgravity.com/httppush/hlspbaudio005/hlspbaudio005_Auto.m3u8', tags: ['classics', 'retro', 'hindi'], freq: 'Gold 106.4 FM', isAir: true, isPrivate: false, icon: 'fa-podcast' },
+            { id: 'red-fm-935', name: 'Red FM 93.5', url: 'https://prclive1.listenon.in/Hindi', tags: ['bollywood', 'hindi', 'private'], freq: 'Bajaate Raho!', isAir: false, isPrivate: true, icon: 'fa-microphone-lines' },
+            { id: 'radio-mirchi-983', name: 'Radio Mirchi 98.3', url: 'http://51.15.208.163:8081/radio/mt20live_11/icecast.audio', tags: ['hindi', 'music', 'private'], freq: 'Mirchi It\'s Hot', isAir: false, isPrivate: true, icon: 'fa-fire' },
+            { id: 'big-fm-927', name: 'BIG FM 92.7', url: 'https://eu10.fastcast4u.com/radionamkin', tags: ['music', 'hindi', 'private'], freq: 'Dhun Badal Ke Dekho', isAir: false, isPrivate: true, icon: 'fa-music' },
+            { id: 'radio-city-tamil', name: 'Radio City Tamil', url: 'https://prclive1.listenon.in/Tamil', tags: ['tamil', 'private', 'music'], freq: 'Rag Rag Mein Daude', isAir: false, isPrivate: true, icon: 'fa-city' }
+        ];
+
+        const API_SERVERS = [
+            'https://de1.api.radio-browser.info',
+            'https://nl1.api.radio-browser.info',
+            'https://at1.api.radio-browser.info'
+        ];
+        let currentApiServerIdx = 0;
+
+        // Application State
+        let allStations = [...CORE_STATIONS];
+        let displayStations = [];
+        let favorites = [];
+        let recentlyPlayed = [];
+        let currentStation = null;
+        let isPlaying = false;
+        let hls = null;
+        let hlsRetryCount = 0;
+        let currentTab = 'all';
+        let apiOffset = 0;
+        const API_LIMIT = 24;
+        let isFetching = false;
+        let noMoreFromAPI = false;
+        let debounceTimer = null;
+
+        // DOM Handles
+        const audio = document.getElementById('audioPlayer');
+        const stationGrid = document.getElementById('stationGrid');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const langFilter = document.getElementById('languageFilter');
+        const playIcon = document.getElementById('playIcon');
+        const playerEq = document.getElementById('playerEq');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const btnMute = document.getElementById('btnMute');
+        const muteIcon = document.getElementById('muteIcon');
+        const favCountBadge = document.getElementById('favCountBadge');
+        const recentCountBadge = document.getElementById('recentCountBadge');
+
+        // --- STORAGE INITIALIZATION ---
+        function loadStorage() {
+            try {
+                const favData = JSON.parse(localStorage.getItem('air_favorites'));
+                if (Array.isArray(favData)) favorites = favData;
+            } catch(e) { favorites = []; }
+
+            try {
+                const recData = JSON.parse(localStorage.getItem('air_recently_played'));
+                if (Array.isArray(recData)) recentlyPlayed = recData;
+            } catch(e) { recentlyPlayed = []; }
+
+            // Restore volume settings
+            const savedVol = localStorage.getItem('air_volume');
+            if (savedVol !== null && volumeSlider) {
+                const volVal = parseFloat(savedVol);
+                volumeSlider.value = volVal * 100;
+                audio.volume = volVal;
+                updateVolumeIcon(volVal);
+            }
+
+            // Merge cached objects
+            [...favorites, ...recentlyPlayed].forEach(saved => {
+                if (!allStations.some(s => s.id === saved.id || s.url === saved.url)) {
+                    allStations.push(saved);
+                }
+            });
+
+            updateBadges();
+        }
+
+        function updateBadges() {
+            if (favCountBadge) favCountBadge.textContent = favorites.length;
+            if (recentCountBadge) recentCountBadge.textContent = recentlyPlayed.length;
+        }
+
+        // --- 6 THEMES ENGINE ---
+        const VALID_THEMES = ['dark', 'light', 'cyber', 'sahara', 'nordic', 'amethyst'];
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('air_theme') || 'dark';
+            setTheme(savedTheme, false);
+        }
+
+        function setTheme(themeName, showToastMsg = true) {
+            if (!VALID_THEMES.includes(themeName)) themeName = 'dark';
+            document.documentElement.setAttribute('data-theme', themeName);
+            
+            if (themeName === 'light' || themeName === 'sahara') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                document.documentElement.classList.add('dark');
+            }
+
+            // Synchronize theme buttons in settings
+            document.querySelectorAll('[data-theme-btn]').forEach(btn => {
+                if (btn.dataset.themeBtn === themeName) {
+                    btn.classList.add('neo-pressed');
+                    btn.classList.remove('neo-btn');
+                    btn.style.borderColor = 'var(--neo-accent)';
+                } else {
+                    btn.classList.remove('neo-pressed');
+                    btn.classList.add('neo-btn');
+                    btn.style.borderColor = '';
+                }
+            });
+
+            localStorage.setItem('air_theme', themeName);
+            if (showToastMsg) showToast(`Theme updated to ${themeName.toUpperCase()}`, 'fa-palette');
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        let toastTimeout = null;
+        function showToast(msg, icon = 'fa-circle-check') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMsg.textContent = msg;
+            toastIcon.className = `fa-solid ${icon}`;
+            toast.classList.add('show');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // --- AUDIO ENGINE ---
+        function setupAudio() {
+            audio.addEventListener('playing', () => {
+                isPlaying = true;
+                hlsRetryCount = 0;
+                playIcon.className = 'fa-solid fa-pause';
+                setPlayerStatus(currentStation.freq || 'Live Stream Active');
+                playerEq.classList.remove('hidden', 'eq-paused');
+                playerEq.classList.add('flex');
+                updateActiveCardUI();
+                updateMediaSession();
+            });
+
+            audio.addEventListener('pause', () => {
+                isPlaying = false;
+                playIcon.className = 'fa-solid fa-play ml-0.5';
+                setPlayerStatus('Paused');
+                playerEq.classList.add('eq-paused');
+                updateActiveCardUI();
+            });
+
+            audio.addEventListener('waiting', () => {
+                setPlayerStatus('<i class="fa-solid fa-circle-notch fa-spin text-xs"></i> Buffering...');
+            });
+
+            audio.addEventListener('error', () => {
+                if (audio.error && audio.error.code === 4 && audio.src === '') return;
+                setPlayerStatus('<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation"></i> Signal Lost</span>');
+                playIcon.className = 'fa-solid fa-play ml-0.5';
+                playerEq.classList.add('hidden');
+                updateActiveCardUI();
+            });
+
+            // Player bar click bindings
+            document.getElementById('btnPlayPause').addEventListener('click', togglePlay);
+            document.getElementById('btnNext').addEventListener('click', playNext);
+            document.getElementById('btnPrev').addEventListener('click', playPrev);
+            document.getElementById('btnFavorite').addEventListener('click', toggleCurrentFavorite);
+
+            // Volume Control
+            if (volumeSlider) {
+                volumeSlider.addEventListener('input', (e) => {
+                    const vol = e.target.value / 100;
+                    audio.volume = vol;
+                    localStorage.setItem('air_volume', vol);
+                    updateVolumeIcon(vol);
+                });
+            }
+
+            if (btnMute) {
+                btnMute.addEventListener('click', () => {
+                    if (audio.volume > 0) {
+                        audio.dataset.prevVolume = audio.volume;
+                        audio.volume = 0;
+                        volumeSlider.value = 0;
+                    } else {
+                        const restoreVol = parseFloat(audio.dataset.prevVolume || 0.8);
+                        audio.volume = restoreVol;
+                        volumeSlider.value = restoreVol * 100;
+                    }
+                    localStorage.setItem('air_volume', audio.volume);
+                    updateVolumeIcon(audio.volume);
+                });
+            }
+
+            // Keyboard navigation
+            window.addEventListener('keydown', (e) => {
+                if (['input', 'textarea', 'select'].includes(document.activeElement.tagName.toLowerCase())) return;
+                
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlay();
+                } else if (e.code === 'ArrowRight') {
+                    e.preventDefault();
+                    playNext();
+                } else if (e.code === 'ArrowLeft') {
+                    e.preventDefault();
+                    playPrev();
+                } else if (e.code === 'KeyM') {
+                    e.preventDefault();
+                    if (btnMute) btnMute.click();
+                } else if (e.code === 'Escape') {
+                    const modal = document.getElementById('settingsModal');
+                    if (!modal.classList.contains('hidden')) toggleSettingsModal();
+                }
+            });
+        }
+
+        function updateVolumeIcon(vol) {
+            if (!muteIcon) return;
+            if (vol === 0) muteIcon.className = 'fa-solid fa-volume-xmark text-red-500';
+            else if (vol < 0.5) muteIcon.className = 'fa-solid fa-volume-low';
+            else muteIcon.className = 'fa-solid fa-volume-high';
+        }
+
+        function setPlayerStatus(html) {
+            document.getElementById('playerStatus').innerHTML = html;
+        }
+
+        function playStation(station) {
+            if (!station || !station.url) return;
+            currentStation = station;
+
+            // Track recent playback
+            addRecentlyPlayed(station);
+
+            // Update UI elements in player dock
+            document.getElementById('playerStationName').textContent = station.name;
+            setPlayerStatus('<i class="fa-solid fa-circle-notch fa-spin text-xs"></i> Connecting...');
+            playIcon.className = 'fa-solid fa-play ml-0.5';
+
+            const logoEl = document.getElementById('playerLogo');
+            const iconEl = document.getElementById('playerDefaultIcon');
+
+            if (station.logo && station.logo.startsWith('http')) {
+                logoEl.src = station.logo;
+                logoEl.classList.remove('hidden');
+                iconEl.classList.add('hidden');
+            } else {
+                logoEl.classList.add('hidden');
+                iconEl.classList.remove('hidden');
+                iconEl.className = `fa-solid ${station.icon || 'fa-radio'} text-lg md:text-xl`;
+            }
+
+            updatePlayerFavIcon();
+            updateActiveCardUI();
+
+            // Destroy previous HLS instance safely
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+
+            audio.pause();
+            audio.removeAttribute('src');
+            audio.load();
+
+            const isM3U8 = station.url.includes('.m3u8') || station.url.includes('playlist');
+
+            if (isM3U8 && Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    maxBufferLength: 20
+                });
+                hls.loadSource(station.url);
+                hls.attachMedia(audio);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) playPromise.catch(() => {});
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && hlsRetryCount < 2) {
+                            hlsRetryCount++;
+                            hls.startLoad();
+                        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            hls.recoverMediaError();
+                        } else {
+                            setPlayerStatus('<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation"></i> Stream Offline</span>');
+                        }
+                    }
+                });
+            } else {
+                audio.src = station.url;
+                const playPromise = audio.play();
+                if (playPromise !== undefined) playPromise.catch(() => {});
+            }
+        }
+
+        function togglePlay() {
+            if (!currentStation) {
+                playFirstAvailable();
+                return;
+            }
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                const playPromise = audio.play();
+                if (playPromise !== undefined) playPromise.catch(() => {});
+            }
+        }
+
+        function playFirstAvailable() {
+            if (displayStations.length > 0) playStation(displayStations[0]);
+            else if (allStations.length > 0) playStation(allStations[0]);
+        }
+
+        function playNext() {
+            if (!displayStations.length) return;
+            if (!currentStation) {
+                playStation(displayStations[0]);
+                return;
+            }
+            const idx = displayStations.findIndex(s => s.id === currentStation.id);
+            const nextIdx = (idx + 1) % displayStations.length;
+            playStation(displayStations[nextIdx]);
+        }
+
+        function playPrev() {
+            if (!displayStations.length) return;
+            if (!currentStation) {
+                playStation(displayStations[0]);
+                return;
+            }
+            const idx = displayStations.findIndex(s => s.id === currentStation.id);
+            const prevIdx = (idx - 1 + displayStations.length) % displayStations.length;
+            playStation(displayStations[prevIdx]);
+        }
+
+        function updateMediaSession() {
+            if ('mediaSession' in navigator && currentStation) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: currentStation.name,
+                    artist: 'All India Radio Live',
+                    album: currentStation.freq || 'Indian Live Radio',
+                    artwork: [
+                        { src: currentStation.logo || 'https://air.pc.cdn.bitgravity.com/favicon.ico', sizes: '96x96', type: 'image/png' }
+                    ]
+                });
+
+                navigator.mediaSession.setActionHandler('play', () => audio.play().catch(()=>{}));
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+                navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+            }
+        }
+
+        // --- FAVORITES & HISTORY MANAGEMENT ---
+        function toggleFavorite(id) {
+            const index = favorites.findIndex(f => f.id === id);
+            if (index > -1) {
+                favorites.splice(index, 1);
+                showToast("Removed from Favourites", "fa-heart-crack");
+            } else {
+                const stationObj = allStations.find(s => s.id === id);
+                if (stationObj) {
+                    favorites.push(stationObj);
+                    showToast("Added to Favourites", "fa-heart");
+                }
+            }
+
+            localStorage.setItem('air_favorites', JSON.stringify(favorites));
+            updateBadges();
+            updatePlayerFavIcon();
+
+            if (currentTab === 'favorites') {
+                applyFilters();
+            } else {
+                const cardBtn = document.querySelector(`[data-fav-id="${id}"]`);
+                if (cardBtn) {
+                    const isFav = favorites.some(f => f.id === id);
+                    cardBtn.innerHTML = `<i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular'} fa-heart"></i>`;
+                }
+            }
+        }
+
+        function toggleCurrentFavorite() {
+            if (currentStation) toggleFavorite(currentStation.id);
+        }
+
+        function updatePlayerFavIcon() {
+            if (!currentStation) return;
+            const isFav = favorites.some(f => f.id === currentStation.id);
+            const btn = document.getElementById('btnFavorite');
+            btn.innerHTML = `<i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular'} fa-heart"></i>`;
+        }
+
+        function addRecentlyPlayed(station) {
+            recentlyPlayed = recentlyPlayed.filter(s => s.id !== station.id);
+            recentlyPlayed.unshift(station);
+            if (recentlyPlayed.length > 25) recentlyPlayed.pop();
+
+            localStorage.setItem('air_recently_played', JSON.stringify(recentlyPlayed));
+            updateBadges();
+
+            if (currentTab === 'recent') applyFilters();
+        }
+
+        // --- ONLY CLEAR RECENT HISTORY (PRESERVES FAVORITES) ---
+        function clearHistoryOnly() {
+            if (recentlyPlayed.length === 0) {
+                showToast("History is already empty", "fa-circle-info");
+                return;
+            }
+            if (confirm("Clear your Listening History?\n\n(Note: Your starred Favourites will NOT be deleted)")) {
+                recentlyPlayed = [];
+                localStorage.removeItem('air_recently_played');
+                updateBadges();
+                if (currentTab === 'recent') applyFilters();
+                showToast("Listening history cleared", "fa-check");
+                toggleSettingsModal();
+            }
+        }
+
+        // --- RENDERING & UI ---
+        function clearSearch() {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const query = (searchInput ? searchInput.value.toLowerCase().trim() : '');
+            const lang = langFilter.value;
+
+            let source = allStations;
+            if (currentTab === 'air') source = allStations.filter(s => s.isAir);
+            else if (currentTab === 'private') source = allStations.filter(s => s.isPrivate);
+            else if (currentTab === 'favorites') source = favorites;
+            else if (currentTab === 'recent') source = recentlyPlayed;
+
+            let filtered = source;
+            if (query || lang !== 'all') {
+                filtered = source.filter(s => {
+                    const matchQ = !query || s.name.toLowerCase().includes(query) || s.tags.some(t => t.includes(query));
+                    const matchL = lang === 'all' || s.tags.some(t => t.includes(lang.toLowerCase()));
+                    return matchQ && matchL;
+                });
+            }
+
+            displayStations = filtered;
+            renderStations(filtered);
+        }
+
+        function renderStations(stations) {
+            const hero = document.getElementById('heroBanner');
+            const heading = document.getElementById('sectionHeading');
+            const countLabel = document.getElementById('stationCount');
+            const emptyState = document.getElementById('emptyState');
+
+            // Hero banner visibility
+            if (currentTab === 'all' && (!searchInput.value.trim())) {
+                hero.style.display = 'flex';
+            } else {
+                hero.style.display = 'none';
+            }
+
+            // Titles
+            let title = "Featured Stations";
+            if (currentTab === 'air') title = "AIR Official Broadcasters";
+            else if (currentTab === 'private') title = "Private FM Networks";
+            else if (currentTab === 'favorites') title = "Your Favourites";
+            else if (currentTab === 'recent') title = "Recently Played";
+
+            if (searchInput.value.trim()) {
+                title = `Results for "${searchInput.value.trim()}"`;
+            }
+
+            heading.textContent = title;
+            countLabel.textContent = `${stations.length} station${stations.length === 1 ? '' : 's'}`;
+
+            stationGrid.innerHTML = '';
+
+            if (stations.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            const fragment = document.createDocumentFragment();
+
+            stations.forEach(station => {
+                const isFav = favorites.some(f => f.id === station.id);
+                const isCurrentPlaying = currentStation && currentStation.id === station.id && isPlaying;
+
+                const card = document.createElement('div');
+                card.className = `station-card rounded-2xl p-4 flex items-center justify-between cursor-pointer relative group ${isCurrentPlaying ? 'is-playing' : ''}`;
+                card.dataset.stationId = station.id;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3.5 overflow-hidden flex-1">
+                        <div class="w-12 h-12 rounded-xl neo-pressed flex items-center justify-center shrink-0 overflow-hidden relative">
+                            ${station.logo && station.logo.startsWith('http') 
+                                ? `<img src="${station.logo}" class="w-full h-full object-contain p-1 rounded-xl" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+                                   <i class="fa-solid ${station.icon || 'fa-radio'} text-lg hidden" style="color: var(--neo-text-muted);"></i>`
+                                : `<i class="fa-solid ${station.icon || 'fa-radio'} text-lg" style="color: var(--neo-text-muted);"></i>`}
+                        </div>
+                        <div class="truncate flex-1">
+                            <h4 class="font-extrabold text-xs md:text-sm truncate leading-tight mb-1 text-[var(--neo-text)]">${station.name}</h4>
+                            <p class="text-[10px] font-bold truncate leading-none" style="color: var(--neo-text-muted);">${station.freq || 'Live Broadcaster'}</p>
+                        </div>
+                    </div>
+
+                    <button data-fav-id="${station.id}" class="w-8 h-8 rounded-full neo-btn flex items-center justify-center text-xs ml-2 shrink-0 ${isFav ? 'text-red-500' : 'opacity-60 group-hover:opacity-100'}" title="Toggle Favorite">
+                        <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                    </button>
+                `;
+
+                fragment.appendChild(card);
+            });
+
+            stationGrid.appendChild(fragment);
+        }
+
+        // Fast Event Delegation
+        stationGrid.addEventListener('click', (e) => {
+            const favBtn = e.target.closest('[data-fav-id]');
+            if (favBtn) {
+                e.stopPropagation();
+                toggleFavorite(favBtn.dataset.favId);
+                return;
+            }
+
+            const card = e.target.closest('.station-card');
+            if (card) {
+                const st = allStations.find(s => s.id === card.dataset.stationId);
+                if (st) playStation(st);
+            }
+        });
+
+        function updateActiveCardUI() {
+            document.querySelectorAll('.station-card').forEach(c => {
+                const isCurr = currentStation && c.dataset.stationId === currentStation.id;
+                if (isCurr && isPlaying) c.classList.add('is-playing');
+                else c.classList.remove('is-playing');
+            });
+        }
+
+        // --- NAVIGATION TABS ---
+        function switchTab(cat) {
+            currentTab = cat;
+            document.querySelectorAll('.nav-link[data-cat]').forEach(link => {
+                if (link.dataset.cat === cat) link.classList.add('active');
+                else link.classList.remove('active');
+            });
+
+            if (searchInput) {
+                searchInput.value = '';
+                clearSearchBtn.classList.add('hidden');
+            }
+            if (langFilter) langFilter.value = 'all';
+
+            applyFilters();
+            document.getElementById('mainScrollArea').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- API INTEGRATION WITH MIRRORS ---
+        async function fetchAPIStations() {
+            if (isFetching || noMoreFromAPI) return;
+            isFetching = true;
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+
+            const server = API_SERVERS[currentApiServerIdx];
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+            try {
+                const res = await fetch(`${server}/json/stations/search?countrycode=IN&limit=${API_LIMIT}&offset=${apiOffset}&order=votes&reverse=true&hidebroken=true`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    noMoreFromAPI = true;
+                } else {
+                    let added = false;
+                    data.forEach(s => {
+                        const nameLower = (s.name || '').toLowerCase();
+                        const isAir = nameLower.includes('air') || nameLower.includes('vividh') || nameLower.includes('prasar');
+                        const url = s.url_resolved || s.url;
+                        
+                        if (url && !allStations.some(ext => ext.url === url || ext.id === s.stationuuid)) {
+                            allStations.push({
+                                id: s.stationuuid,
+                                name: s.name.trim() || 'Indian Radio',
+                                url: url,
+                                logo: s.favicon || '',
+                                tags: [s.language || '', s.tags || '', s.state || ''].join(',').toLowerCase().split(',').map(t => t.trim()).filter(Boolean),
+                                freq: s.state ? `${s.state}` : 'Web Broadcast',
+                                isAir: isAir,
+                                isPrivate: !isAir,
+                                icon: isAir ? 'fa-tower-broadcast' : 'fa-radio'
+                            });
+                            added = true;
+                        }
+                    });
+                    apiOffset += API_LIMIT;
+                    if (added) applyFilters();
+                }
+            } catch (err) {
+                currentApiServerIdx = (currentApiServerIdx + 1) % API_SERVERS.length;
+            } finally {
+                isFetching = false;
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            }
+        }
+
+        // --- MODAL & MENU HELPERS ---
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('hidden');
+            overlay.classList.toggle('hidden');
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // --- LIFECYCLE INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadStorage();
+            setupAudio();
+
+            // Search input handlers
+            searchInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                clearSearchBtn.classList.toggle('hidden', val.length === 0);
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    applyFilters();
+                }, 150);
+            });
+
+            langFilter.addEventListener('change', applyFilters);
+
+            // Tab listeners
+            document.querySelectorAll('.nav-link[data-cat]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    switchTab(e.currentTarget.dataset.cat);
+                    if (window.innerWidth < 768) toggleMobileMenu();
+                });
+            });
+
+            // Infinite scroll trigger
+            document.getElementById('mainScrollArea').addEventListener('scroll', (e) => {
+                const el = e.target;
+                if ((el.scrollHeight - el.scrollTop) <= el.clientHeight + 250) {
+                    fetchAPIStations();
+                }
+            });
+
+            applyFilters();
+            fetchAPIStations();
+        });
+    </script>
+</body>
+</html>
